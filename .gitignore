@@ -1,4 +1,6 @@
 logs
 venv
 test
-test.py
+test*
+*.tar
+*.sh
