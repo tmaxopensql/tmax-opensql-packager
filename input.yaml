@@ -1,0 +1,25 @@
+os:
+  name: oraclelinux
+  version: 8.10
+# available os: {
+#   oraclelinux: [ 8.0 ~ 8.10, 9 ]
+#   rockylinux: [ 8.4 ~ 8.10, 9.0 ~ 9.4 ]
+# }
+
+database:
+  name: postgresql
+  version: 15.8
+# available version: [ 15.8 ]
+
+options:
+  - name: pgpool
+    version: 4.4.4
+    # available version: [ 4.4.4 ]
+
+  - name: postgis
+    version: 3.4.0
+    # available version: [ 3.4.0 ]
+
+  - name: barman
+    version: 3.11.1
+    # available version: [ 3.11.1 ]
