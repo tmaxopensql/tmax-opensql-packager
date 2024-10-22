@@ -44,7 +44,8 @@ component_artifacts = {
     },
     'pgpool': 'pgpool-II-pg{pg_major_version}-{version}',
     'postgis': 'postgis3{number}_{pg_major_version}-{version}', # epel needed
-    'barman': 'barman-{version}'                                # epel needed
+    'barman': 'barman-{version}',                               # epel needed
+    'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm'
 }
 
 # epel(CRB) settings for redhat os
@@ -78,7 +79,8 @@ support_versions = {
     'postgresql': { '15.8' },
     'pgpool': { '4.4.4' },
     'postgis': { '3.4.0' },
-    'barman': { '3.11.1' }
+    'barman': { '3.11.1' },
+    'pg_hint_plan': { '1.5.2' }
 }
 
 # docker container directories
@@ -188,6 +190,9 @@ def __main__():
 
             if 'barman' == component[name]:
                 success = get_barman(component, docker_container, docker_container_log)
+
+            if 'pg_hint_plan' == component[name]:
+                success = get_pg_hint_plan(os_major_version, pg_major_version, component, docker_container, docker_container_log)
 
             if not success: return
             else: continue
@@ -453,6 +458,34 @@ def get_barman(component, docker_container, docker_container_log):
 
     if result.exit_code != 0:
         print(f'[ERROR] barman download is failed.')
+        return False
+
+    return True
+
+def get_pg_hint_plan(os_major_version, pg_major_version, component, docker_container, docker_container_log):
+
+    print(f'[INFO] pg_hint_plan download...')
+
+    component_version_tokens = component[version].split('.')
+
+    format_arguments = {
+        version: component[version],
+        major_version: component_version_tokens[0],
+        minor_version: component_version_tokens[1],
+        patch_version: component_version_tokens[2],
+        'os_major_version': os_major_version,
+        'pg_major_version': pg_major_version
+    }
+
+    download_directory = make_component_directory('pg_hint_plan', docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    artifact = component_artifacts['pg_hint_plan'].format(**format_arguments)
+    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] pg_hint_plan download is failed.')
         return False
 
     return True

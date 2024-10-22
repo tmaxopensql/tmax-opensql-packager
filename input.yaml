@@ -23,3 +23,7 @@ options:
   - name: barman
     version: 3.11.1
     # available version: [ 3.11.1 ]
+
+  - name: pg_hint_plan
+    version: 1.5.2
+    # available version: [ 1.5.2 ]
