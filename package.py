@@ -332,7 +332,7 @@ def set_epel_repository(os_name, os_major_version, docker_container, docker_cont
 def make_component_directory(component_name, docker_container, docker_container_log):
 
     download_directory = work_directory + '/' + component_name
-    result = execute_and_log_container(f'mkdir {download_directory}', docker_container, docker_container_log)
+    result = execute_and_log_container(f'mkdir -p {download_directory}', docker_container, docker_container_log)
 
     if result.exit_code != 0:
         print(f'[ERROR] make a directory of {component_name} is failed.\n{result.output.decode()}')
