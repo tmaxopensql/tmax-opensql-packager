@@ -21,7 +21,15 @@ common = 'common'
 components = {
     os: { 'oraclelinux', 'rockylinux' },
     database: { 'postgresql' },
-    options: { 'pgpool', 'postgis', 'barman' },
+    options: {
+        'pgpool','postgis', 'barman', 'pg_build_extension_install_utils',
+        'pg_hint_plan', 'pgaudit', 'credcheck', 'system_stats'
+    },
+}
+
+component_groups = {
+    'rhel': { 'oraclelinux', 'rockylinux' },
+    'pg_build_extensions': { 'pgaudit', 'credcheck', 'system_stats' }
 }
 
 os_repositories = {
@@ -40,12 +48,14 @@ component_artifacts = {
     'postgresql': {
         'postgresql{major_version}-{version}',
         'postgresql{major_version}-server-{version}',
-        'postgresql{major_version}-contrib-{version}'
+        'postgresql{major_version}-contrib-{version}',
+        'postgresql{major_version}-devel-{version}'
     },
     'pgpool': 'pgpool-II-pg{pg_major_version}-{version}',
     'postgis': 'postgis3{number}_{pg_major_version}-{version}', # epel needed
     'barman': 'barman-{version}',                               # epel needed
-    'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm'
+    'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm',
+    'pg_build_extensions': 'https://raw.githubusercontent.com/tmaxopensql/tmax-opensql-extensions/refs/heads/main/{name}/{version}/{name}-{version}-{os_name}{os_version}-pg{pg_major_version}.tar'
 }
 
 # epel(CRB) settings for redhat os
@@ -71,7 +81,11 @@ epel_settings = {
 
 # available version restrictions
 support_versions = {
-    'oraclelinux': { '8.0','8.1','8.2','8.3','8.4','8.5','8.6','8.7','8.8','8.9','8.10', '9' },
+    'oraclelinux': {
+        '8.0','8.1','8.2','8.3',
+        '8.4','8.5','8.6','8.7',
+        '8.8','8.9','8.10', '9'
+    },
     'rockylinux': {
         '8.4','8.5','8.6','8.7','8.8','8.9','8.10',
         '9.0','9.1','9.2','9.3','9.4'
@@ -80,7 +94,11 @@ support_versions = {
     'pgpool': { '4.4.4' },
     'postgis': { '3.4.0' },
     'barman': { '3.11.1' },
-    'pg_hint_plan': { '1.5.2' }
+    'pg_build_extension_install_utils': { '1.0.0' },
+    'pg_hint_plan': { '1.5.2' },
+    'pgaudit': { '1.7' },
+    'credcheck': { '2.8.0' },
+    'system_stats': { '3.2' }
 }
 
 # docker container directories
@@ -194,6 +212,12 @@ def __main__():
             if 'pg_hint_plan' == component[name]:
                 success = get_pg_hint_plan(os_major_version, pg_major_version, component, docker_container, docker_container_log)
 
+            if 'pg_build_extension_install_utils' == component[name]:
+                success = get_pg_build_extension_install_utils(docker_container, docker_container_log)
+
+            if component[name] in component_groups['pg_build_extensions']:
+                success = get_pg_build_extension(spec, component, docker_container, docker_container_log)
+
             if not success: return
             else: continue
 
@@ -234,11 +258,11 @@ def read_yaml(file_path: str):
 
     return data
 
-def execute_and_log_container(command, container, log):
+def execute_and_log_container(command, container, log, workdir=None):
 
     log.write(f'\n[{datetime.now()}] {command}\n'.encode())
 
-    result = container.exec_run(command)
+    result = container.exec_run(command, workdir=workdir)
 
     log.write(result.output)
 
@@ -486,6 +510,131 @@ def get_pg_hint_plan(os_major_version, pg_major_version, component, docker_conta
 
     if result.exit_code != 0:
         print(f'[ERROR] pg_hint_plan download is failed.')
+        return False
+
+    return True
+
+def get_make(docker_container, docker_container_log):
+
+    print(f'[INFO] extension util(make) download...')
+
+    download_directory = make_component_directory('extension-utils-make', docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    artifact = 'make'
+    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] make download is failed.')
+        return False
+
+    return True
+
+def get_llvm(docker_container, docker_container_log):
+
+    print(f'[INFO] extension util(llvm) download...')
+
+    download_directory = make_component_directory('extension-utils-llvm', docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    artifact = 'llvm'
+    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] make download is failed.')
+        return False
+
+    return True
+
+def get_pg_build_extension_install_utils(docker_container, docker_container_log):
+
+    print(f'[INFO] pg build extension install utils download...')
+
+    success = get_make(docker_container, docker_container_log)
+
+    if not success: return False
+
+    success = get_llvm(docker_container, docker_container_log)
+
+    if not success: return False
+
+    return True
+
+def curl_check_file_available(url, docker_container, docker_container_log):
+
+    result = execute_and_log_container(f'curl -s -f -I {url}', docker_container, docker_container_log)
+
+    if result.exit_code == 0: return True
+
+    return False
+
+def curl_download_file(url, path, docker_container, docker_container_log):
+
+    result = execute_and_log_container(f'curl -s -o {path} {url}', docker_container, docker_container_log)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] curl download is failed.\n({url})\n{result.output.decode()}')
+        return False
+
+    return True
+
+def get_pg_build_extension(spec, component, docker_container, docker_container_log):
+
+    print(f'[INFO] pg build extension [{component[name]}] download...')
+
+    format_arguments = {
+        name: component[name],
+        version: component[version],
+        'os_name': spec[os][name],
+        'os_version': spec[os][version],
+        'pg_major_version': spec[database][version].split('.')[0]
+    }
+
+    download_directory = make_component_directory(component[name], docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    url = component_artifacts['pg_build_extensions'].format(**format_arguments)
+
+    available = curl_check_file_available(url, docker_container, docker_container_log)
+
+    # if url is not available, then retry with os major version
+    if not available:
+        print(f'[INFO] trying download pg build extension file with os major version')
+        format_arguments['os_version'] = spec[os][version].split('.')[0]
+        url = component_artifacts['pg_build_extensions'].format(**format_arguments)
+        available = curl_check_file_available(url, docker_container, docker_container_log)
+
+    # if url is not available neither, then retry with os group and major version
+    if not available and spec[os][name] in component_groups['rhel']:
+        print(f'[WARN] there is not available pg build extension file. retry with os group')
+        format_arguments['os_name'] = 'rhel'
+        url = component_artifacts['pg_build_extensions'].format(**format_arguments)
+        available = curl_check_file_available(url, docker_container, docker_container_log)
+
+    # if is not available with os group, then we give up. no choice.
+    if not available:
+        print(f'[ERROR] there is no availabe pg build extension file {component} for {spec[os]} {spec[database]}')
+        return False
+
+    path = download_directory + '/tmp.tar'
+
+    success = curl_download_file(url, path, docker_container, docker_container_log)
+
+    if not success: return False
+
+    result = execute_and_log_container('tar -xvf tmp.tar', docker_container, docker_container_log, download_directory)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] tar -xvf is failed.\n{result.output.decode()}')
+        return False
+
+    result = execute_and_log_container('rm tmp.tar', docker_container, docker_container_log, download_directory)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] rm tmp.tar is failed.\n{result.output.decode()}')
         return False
 
     return True
