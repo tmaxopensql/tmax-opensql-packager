@@ -28,7 +28,6 @@ components = {
 }
 
 component_groups = {
-    'rhel': { 'oraclelinux', 'rockylinux' },
     'pg_build_extensions': { 'pgaudit', 'credcheck', 'system_stats' }
 }
 
@@ -584,6 +583,10 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
 
     print(f'[INFO] pg build extension [{component[name]}] download...')
 
+    download_directory = make_component_directory(component[name], docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
     format_arguments = {
         name: component[name],
         version: component[version],
@@ -592,10 +595,7 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
         'pg_major_version': spec[database][version].split('.')[0]
     }
 
-    download_directory = make_component_directory(component[name], docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
+    # first, we try downloading with os full version info
     url = component_artifacts['pg_build_extensions'].format(**format_arguments)
 
     available = curl_check_file_available(url, docker_container, docker_container_log)
@@ -607,14 +607,7 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
         url = component_artifacts['pg_build_extensions'].format(**format_arguments)
         available = curl_check_file_available(url, docker_container, docker_container_log)
 
-    # if url is not available neither, then retry with os group and major version
-    if not available and spec[os][name] in component_groups['rhel']:
-        print(f'[WARN] there is not available pg build extension file. retry with os group')
-        format_arguments['os_name'] = 'rhel'
-        url = component_artifacts['pg_build_extensions'].format(**format_arguments)
-        available = curl_check_file_available(url, docker_container, docker_container_log)
-
-    # if is not available with os group, then we give up. no choice.
+    # if is not available with os major version, then we give up. no choice.
     if not available:
         print(f'[ERROR] there is no availabe pg build extension file {component} for {spec[os]} {spec[database]}')
         return False
