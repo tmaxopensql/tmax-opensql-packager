@@ -39,7 +39,9 @@ os_repositories = {
 # dnf repositories for opensql components
 component_repositories = {
     'postgresql': 'https://download.postgresql.org/pub/repos/yum/reporpms/EL-{os_major_version}-x86_64/pgdg-redhat-repo-latest.noarch.rpm',
-    'pgpool': 'https://www.pgpool.net/yum/rpms/{major_version}.{minor_version}/redhat/rhel-{os_major_version}-x86_64/pgpool-II-release-{major_version}.{minor_version}-{number}.noarch.rpm'
+    'pgpool': 'https://www.pgpool.net/yum/rpms/{major_version}.{minor_version}/redhat/rhel-{os_major_version}-x86_64/pgpool-II-release-{major_version}.{minor_version}-{number}.noarch.rpm',
+    'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm',
+    'pg_build_extensions': 'https://raw.githubusercontent.com/tmaxopensql/tmax-opensql-extensions/refs/heads/main/{name}/{version}/{name}-{version}-{os_name}{os_version}-pg{pg_major_version}.tar'
 }
 
 # opensql component artifact names
@@ -53,8 +55,6 @@ component_artifacts = {
     'pgpool': 'pgpool-II-pg{pg_major_version}-{version}',
     'postgis': 'postgis3{number}_{pg_major_version}-{version}', # epel needed
     'barman': 'barman-{version}',                               # epel needed
-    'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm',
-    'pg_build_extensions': 'https://raw.githubusercontent.com/tmaxopensql/tmax-opensql-extensions/refs/heads/main/{name}/{version}/{name}-{version}-{os_name}{os_version}-pg{pg_major_version}.tar'
 }
 
 # epel(CRB) settings for redhat os
@@ -504,7 +504,7 @@ def get_pg_hint_plan(os_major_version, pg_major_version, component, docker_conta
 
     if download_directory is None: return False
 
-    artifact = component_artifacts['pg_hint_plan'].format(**format_arguments)
+    artifact = component_repositories['pg_hint_plan'].format(**format_arguments)
     result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
 
     if result.exit_code != 0:
@@ -596,7 +596,7 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
     }
 
     # first, we try downloading with os full version info
-    url = component_artifacts['pg_build_extensions'].format(**format_arguments)
+    url = component_repositories['pg_build_extensions'].format(**format_arguments)
 
     available = curl_check_file_available(url, docker_container, docker_container_log)
 
@@ -604,7 +604,7 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
     if not available:
         print(f'[INFO] trying download pg build extension file with os major version')
         format_arguments['os_version'] = spec[os][version].split('.')[0]
-        url = component_artifacts['pg_build_extensions'].format(**format_arguments)
+        url = component_repositories['pg_build_extensions'].format(**format_arguments)
         available = curl_check_file_available(url, docker_container, docker_container_log)
 
     # if is not available with os major version, then we give up. no choice.
