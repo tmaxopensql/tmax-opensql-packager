@@ -238,7 +238,7 @@ def __main__():
 
     finally:
 
-        if docker_container_log is None:
+        if docker_container_log is not None:
             docker_container_log.close()
 
         if docker_container is not None:
