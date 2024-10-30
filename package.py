@@ -94,7 +94,7 @@ support_versions = {
     'barman': { '3.11.1' },
     'pg_build_extension_install_utils': { '1.0.0' },
     'pg_hint_plan': { '1.5.2' },
-    'pgaudit': { '1.7' },
+    'pgaudit': { '1.7.0' },
     'credcheck': { '2.8.0' },
     'system_stats': { '3.2' }
 }
