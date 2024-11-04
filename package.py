@@ -3,6 +3,7 @@ from os import path, makedirs
 
 import yaml, docker, docker.errors
 import logging, traceback
+import argparse
 
 # label variables for convenience and readability
 os = 'os'
@@ -101,13 +102,15 @@ log_directory_name = 'logs'
 # output tar name
 package_name = 'opensql.tar'
 
-# input file name
-input_file_name = 'input.yaml'
+# default input file name
+default_input_file_name = 'input.yaml'
 
 def __main__():
 
+    input_file_name = get_input_yaml_file_name()
+
     if not path.isfile(input_file_name):
-        print(f'[ERROR] please set an input file (file name must be "{input_file_name}")')
+        print(f'[ERROR] there is no setting file("{input_file_name}")')
         return
 
     spec = read_yaml(input_file_name)
@@ -238,6 +241,16 @@ def __main__():
 
             docker_container.kill()
             docker_container.remove()
+
+def get_input_yaml_file_name():
+
+    parser = argparse.ArgumentParser(description="OpenSQL package setting file parser")
+
+    parser.add_argument('--setting', type=str, default=default_input_file_name, help="OpenSQL package setting yaml file name")
+
+    args = parser.parse_args()
+
+    return args.setting
 
 def read_yaml(file_path: str):
 
