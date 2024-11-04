@@ -18,16 +18,9 @@ patch_version = 'patch_version'
 common = 'common'
 
 # opensql component definitions
-components = {
-    os: { 'oraclelinux', 'rockylinux' },
-    database: { 'postgresql' },
-    options: {
-        'pgpool','postgis', 'barman', 'pg_build_extension_install_utils',
-        'pg_hint_plan', 'pgaudit', 'credcheck', 'system_stats'
-    },
-}
-
 component_groups = {
+    'os': { 'oraclelinux', 'rockylinux' },
+    'database': { 'postgresql' },
     'pg_build_extensions': { 'pgaudit', 'credcheck', 'system_stats' }
 }
 
@@ -120,12 +113,12 @@ def __main__():
     spec = read_yaml(input_file_name)
 
     # Check input parameters
-    if os not in spec or spec[os][name] not in components[os]:
-        print(f'[ERROR] target OS must be set. Please input an OS argument. (available os: {components[os]})')
+    if os not in spec or spec[os][name] not in component_groups[os]:
+        print(f'[ERROR] target OS must be set. Please input an OS argument. (available os: {component_groups[os]})')
         return
 
-    if database not in spec or spec[database][name] not in components[database]:
-        print(f'[ERROR] target Database must be set. Please input Database argument. (available database: {components[database]})')
+    if database not in spec or spec[database][name] not in component_groups[database]:
+        print(f'[ERROR] target Database must be set. Please input Database argument. (available database: {component_groups[database]})')
         return
 
     if spec[os][version] not in support_versions[spec[os][name]]:
