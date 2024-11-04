@@ -50,21 +50,21 @@ component_artifacts = {
     'barman': 'barman-{version}',                               # epel needed
 }
 
-# epel(CRB) settings for redhat os
-epel_settings = {
+# init settings for redhat os
+os_init_settings = {
     'oraclelinux': {
         common: {
-            'dnf -y install epel-release',
+            'dnf -y install tar epel-release',
             'dnf config-manager --enable ol{os_major_version}_codeready_builder'
         }
     },
     'rockylinux': {
         '8': {
-            'dnf -y install epel-release',
+            'dnf -y install tar epel-release',
             'dnf config-manager --set-enabled powertools'
         },
         '9': {
-            'dnf -y install epel-release',
+            'dnf -y install tar epel-release',
             'crb enable',
             'dnf config-manager --set-enabled crb'
         }
@@ -172,10 +172,10 @@ def __main__():
 
         if not success: return
 
-        # epel settings
-        if os_name in epel_settings:
+        # os init settings
+        if os_name in os_init_settings:
 
-            success = set_epel_repository(os_name, os_major_version, docker_container, docker_container_log)
+            success = init_os(os_name, os_major_version, docker_container, docker_container_log)
 
             if not success: return
 
@@ -337,11 +337,11 @@ def get_repotrack_if_not_exists(docker_container, docker_container_log):
 
     return True
 
-def set_epel_repository(os_name, os_major_version, docker_container, docker_container_log):
+def init_os(os_name, os_major_version, docker_container, docker_container_log):
 
-    print(f'[INFO] redhat os epel(CRB) setting...')
+    print(f'[INFO] os init setting...')
 
-    epel_setting = epel_settings[os_name]
+    epel_setting = os_init_settings[os_name]
 
     if common in epel_setting:
         commands = epel_setting[common]
@@ -352,7 +352,7 @@ def set_epel_repository(os_name, os_major_version, docker_container, docker_cont
         result = execute_and_log_container(command.format(os_major_version=os_major_version), docker_container, docker_container_log)
 
         if result.exit_code != 0:
-            print(f'[ERROR] os epel setting is failed.\n{result.output.decode()}')
+            print(f'[ERROR] os init setting is failed.\n{result.output.decode()}')
             return False
 
     return True
@@ -576,7 +576,7 @@ def curl_check_file_available(url, docker_container, docker_container_log):
 
 def curl_download_file(url, path, docker_container, docker_container_log):
 
-    result = execute_and_log_container(f'curl -s -o {path} {url}', docker_container, docker_container_log)
+    result = execute_and_log_container(f'curl -L -s -o {path} {url}', docker_container, docker_container_log)
 
     if result.exit_code != 0:
         print(f'[ERROR] curl download is failed.\n({url})\n{result.output.decode()}')
