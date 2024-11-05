@@ -79,7 +79,7 @@ os:
 database:
   name: postgresql
   version: 15.8
-# available version: [ 15.8 ]
+# available version: [ 14.13, 15.8 ]
 
 # OpenSQL 설치 패키지에 포함시킬 컴포넌트(third party 툴, 유틸, pg extension) 설정
 # 주석처리 또는 제거 시, 해당 컴포넌트는 OpenSQL 패키지에서 배제 가능
@@ -101,9 +101,13 @@ options:
     version: 1.0.0
     # available version: [ 1.0.0 ]
 
+    # pg_hint_plan의 경우, PG 메이저 버전에 따라 이용가능한 버전 자체가 다르므로 설정 시 주의
   - name: pg_hint_plan
     version: 1.5.2
-    # available version: [ 1.5.2 ]
+    # available version: {
+    #   PG14: [ 1.4.3 ]
+    #   PG15: [ 1.5.2 ]
+    # }
 
   - name: pgaudit
     version: 1.7.0
@@ -141,7 +145,7 @@ os:
 database:
   name: postgresql
   version: 15.8
-# available version: [ 15.8 ]
+# available version: [ 14.13, 15.8 ]
 
 options:
   - name: pgpool
@@ -162,7 +166,10 @@ options:
 
   - name: pg_hint_plan
     version: 1.5.2
-    # available version: [ 1.5.2 ]
+    # available version: {
+    #   PG14: [ 1.4.3 ]
+    #   PG15: [ 1.5.2 ]
+    # }
 
   - name: pgaudit
     version: 1.7.0
@@ -192,7 +199,7 @@ os:
 database:
   name: postgresql
   version: 15.8
-# available version: [ 15.8 ]
+# available version: [ 14.13, 15.8 ]
 
 options:
   - name: etcd
@@ -209,7 +216,10 @@ options:
 
   - name: pg_hint_plan
     version: 1.5.2
-    # available version: [ 1.5.2 ]
+    # available version: {
+    #   PG14: [ 1.4.3 ]
+    #   PG15: [ 1.5.2 ]
+    # }
 
   - name: pgaudit
     version: 1.7.0
