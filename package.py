@@ -56,17 +56,17 @@ component_artifacts = {
 os_init_settings = {
     'oraclelinux': {
         common: {
-            'dnf -y install tar epel-release',
+            'dnf -y install tar epel-release python3',
             'dnf config-manager --enable ol{os_major_version}_codeready_builder'
         }
     },
     'rockylinux': {
         '8': {
-            'dnf -y install tar epel-release',
+            'dnf -y install tar epel-release python3',
             'dnf config-manager --set-enabled powertools'
         },
         '9': {
-            'dnf -y install tar epel-release',
+            'dnf -y install tar epel-release python3',
             'crb enable',
             'dnf config-manager --set-enabled crb'
         }
@@ -93,7 +93,8 @@ support_versions = {
     'pgaudit': { '1.7.0' },
     'credcheck': { '2.8.0' },
     'system_stats': { '3.2' },
-    'etcd': { '3.5.6' }
+    'etcd': { '3.5.6' },
+    'patroni': { '4.0.3' }
 }
 
 # docker container directories
@@ -217,6 +218,9 @@ def __main__():
 
             if 'etcd' == component[name]:
                 success = get_etcd(component, docker_container, docker_container_log)
+
+            if 'patroni' == component[name]:
+                success = get_patroni(component, docker_container, docker_container_log)
 
             if not success: return
             else: continue
@@ -620,6 +624,33 @@ def get_etcd(component, docker_container, docker_container_log):
 
     if result.exit_code != 0:
         print(f'[ERROR] rm tmp.tar is failed.\n{result.output.decode()}')
+        return False
+
+    return True
+
+def get_patroni(component, docker_container, docker_container_log):
+
+    print(f'[INFO] patroni dependencies download...')
+
+    dependencies = { 'python3', 'python3-psycopg2', 'gcc', 'python3-devel' }
+
+    for artifact in dependencies:
+
+        success = download_rpms(artifact, f'{component[name]}-dependencies/{artifact}', docker_container, docker_container_log)
+
+        if not success: return False
+
+    print(f'[INFO] patroni download...')
+
+    component_directory = make_component_directory(component[name], docker_container, docker_container_log)
+
+    if component_directory is None: return False
+
+    artifact = 'patroni[etcd]==' + component[version]
+    result = execute_and_log_container(f'pip3 download {artifact}', docker_container, docker_container_log, component_directory)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] patroni download is failed.')
         return False
 
     return True
