@@ -313,30 +313,36 @@ system_stats 3.2
 >    * `--replacepkgs` : 이미 동일한 버전의 패키지가 설치되어 있으면 rpm 설치를 거부하는데, 이 옵션 추가 시 rpm 패키지를 교체하면서 설치 진행하도록 함
 >    * `--replacefiles` : 이미 설치된 패키지의 구성 파일과 겹치는 구성 파일이 있으면 rpm 설치를 거부하는데, 이 옵션 추가 시 구성파일을 교체하면서 설치 진행하도록 함
 
-#### make install 설치 (pre-built pg extension C binaries)
+#### pg extension 설치
 
-- 미리 빌드한 C 바이너리 형태로 제공되는 pg extension 파일들을 설치합니다
+```bash
+# 디렉토리 내부 `Makefile` 파일이 있는 pg extension들 대상으로 make install 수행
 
-- 디렉토리 내부 `Makefile` 파일이 있는 pg extension 컴포넌트들에 대해,  
-  설치하고자 컴포넌트의 디렉토리 이동 후 `make install`로 설치합니다
+# pgaudit (opensql/pgaudit 디렉토리 기준)
+make install USE_PGXS=1 PG_CONFIG=/usr/pgsql-{PG 메이저 버전}/bin/pg_config
 
-- 기본 구조는 `make install` 동일하나, pg extension 별로 추가로 넘겨줘야 하는 인자 값이 있을 수 있습니다
+# system_stats (opensql/system_stats 디렉토리 기준)
+make install USE_PGXS=1
 
-- 현재 제공되는 pg extension들의 `make install` 전체 커맨드는 다음과 같습니다
+# credcheck (opensql/credcheck 디렉토리 기준)
+make install
+```
 
-  - pgaudit: `make install USE_PGXS=1 PG_CONFIG=/usr/pgsql-{PG 메이저 버전}/bin/pg_config`
-  - system_stats: `make install USE_PGXS=1`
-  - credcheck: `make install`  
-  
+**pg extension make install 설치 주의사항**
+- 디렉토리 내부 `Makefile` 파일이 있는 pg extension들에 대해,  
+  설치하고자 하느 컴포넌트의 디렉토리 이동 후 `make install`로 설치합니다
 
-**make install 설치 주의사항**
-- 설치하려는 서버 환경에서 postgresql의 바이너리 파일들 경로가 **PATH 환경변수($PATH)** 에 등록이 되어 있어야 합니다 (터미널에서 `pg_config` 사용이 가능해야 합니다) 
+- 기본 구조는 `make install` 동일하나, pg extension 별로 추가로 넘겨줘야 하는 인자 값이 다릅니다  
+  (인자가 필요없는 extension도 있음)
+
+- 설치하려는 서버 환경에서 postgresql의 바이너리 파일들 경로가 **PATH 환경변수($PATH)** 에 등록이 되어 있어야 합니다  
+  (터미널에서 `pg_config` 사용이 가능해야 합니다) 
 
 - extension들의 디렉토리 내부에 `install` 이라는 description 파일이 존재합니다.  
   해당 파일을 통해 `make install` 수행 시 필요한 인자 값을 확인할 수 있습니다
 
 - `make install`은 사전에 `make`, `llvm` 유틸이 설치되어 있어야 수행 가능합니다.   
-  (`extension-utils-make`, `extension-utils-llvm` 디렉토리는 해당 유틸들의 rpm 파일을 제공하므로, 필요시 설치 하시면 됩니다)
+  (`extension-utils/make`, `extension-utils/llvm` 디렉토리는 해당 유틸들의 rpm 파일을 제공하므로, 필요시 설치 하시면 됩니다)
 
 #### etcd 설치
 
