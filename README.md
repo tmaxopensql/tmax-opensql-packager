@@ -20,7 +20,9 @@
 툴은 다음과 같은 구성요소로 이루어져 있습니다.
 
 - `logs` (디렉토리) : 툴 실행 시 사용된 도커 컨테이너 내부 로그를 기록합니다. (툴 실행 시 디렉토리 및 로그파일이 자동 생성됩니다.)
-- `input.yaml` : OpenSQL 패키징 설정 파일입니다.
+- `input.yaml` : OpenSQL 패키징 내용을 변경하는 설정 파일입니다.  
+  - `opensql-2.0.yaml` : OpenSQL v2.0 구성 패키지를 미리 설정한 `input.yaml` 템플릿
+  - `opensql-2.1.yaml` : OpenSQL v2.1 구성 패키지를 미리 설정한 `input.yaml` 템플릿
 - `package.py` : 툴 수행동작을 기술한 파이썬 스크립트입니다.
 - `requirements.txt` : 툴 사용에 필요한 파이썬 요구 라이브러리 모음입니다.
 
@@ -52,10 +54,15 @@ urllib3            2.2.3
 
 ### OpenSQL 패키지 세팅
 
-`input.yaml` 내부 설정값을 변경하며 툴로 생성하려는 OpenSQL 패키지의 호환 OS 종류와 버전, OpenSQL 패키지 구성 컴포넌트 정보를 변경할 수 있습니다
+- 툴 실행 전, 설정파일(.yaml 파일)을 통해 생성하려는 OpenSQL 패키지의 호환 OS 종류 및 버전, OpenSQL 패키지에 포함될 컴포넌트를 설정합니다
+- 별도로 [OpenSQL 패키징 설정파일 경로에 대한 지정](#특정-패키징-설정파일-지정-후-opensql-패키지-생성-실행)을 하지 않으면, 기본적으로 `input.yaml` 설정파일을 로드하여 패키징 작업을 진행합니다
+- `input.yaml` 은 현재 툴을 통해 패키징 가능한 모든 OpenSQL 컴포넌트(opensql v2.0 및 v2.1) 설정 정보를 포함합니다
+- `input.yaml`을 기반으로 하는 OpenSQL v2.0, v2.1 패키징 설정파일 템플릿 `opensql-2.0.yaml`, `opensql-2.1.yaml`를 같이 제공하여 OpenSQL 버전 별로 나누어 패키징할 수 있도록 지원합니다
 
+#### input.yaml
+패키징 툴을 통해 패키징 가능한 모든 컴포넌트 정보를 포함하는 기본 패키징 설정파일
 ```yaml
-# available version은 현재 툴에서 지원되는 OS 및 OpenSQL 컴포넌트 버전을 기재
+# available version은 현재 툴에서 지원하는 OS 및 OpenSQL 컴포넌트 버전을 기재
 # (추후 필요에 따라 지원 버전 추가 예정)
 
 
@@ -75,7 +82,7 @@ database:
 # available version: [ 15.8 ]
 
 # OpenSQL 설치 패키지에 포함시킬 컴포넌트(third party 툴, 유틸, pg extension) 설정
-# 주석처리시 해당 컴포넌트는 OpenSQL 패키지에서 배제 가능
+# 주석처리 또는 제거 시, 해당 컴포넌트는 OpenSQL 패키지에서 배제 가능
 options:
   - name: pgpool
     version: 4.4.4
@@ -109,15 +116,106 @@ options:
   - name: system_stats
     version: 3.2
     # available version: [ 3.2 ]
+
+  - name: etcd
+    version: 3.5.6
+    # available version: [ 3.5.6 ]
+
+  - name: patroni
+    version: 4.0.3
+    # available version: [ 4.0.3 ]
+```
+
+#### opensql-2.0.yaml
+OpenSQL v2.0 패키징을 위한 `input.yaml` 템플릿
+
+```yaml
+os:
+  name: oraclelinux
+  version: 8.10
+
+database:
+  name: postgresql
+  version: 15.8
+
+options:
+  - name: pgpool
+    version: 4.4.4
+
+  - name: postgis
+    version: 3.4.0
+
+  - name: barman
+    version: 3.11.1
+
+  - name: pg_build_extension_install_utils
+    version: 1.0.0
+
+  - name: pg_hint_plan
+    version: 1.5.2
+
+  - name: pgaudit
+    version: 1.7.0
+
+  - name: credcheck
+    version: 2.8.0
+
+  - name: system_stats
+    version: 3.2
+```
+
+#### opensql-2.1.yaml
+OpenSQL v2.1 패키징을 위한 `input.yaml` 템플릿
+
+```yaml
+os:
+  name: oraclelinux
+  version: 8.10
+
+database:
+  name: postgresql
+  version: 15.8
+
+options:
+  - name: etcd
+    version: 3.5.6
+
+  - name: patroni
+    version: 4.0.3
+
+  - name: pg_build_extension_install_utils
+    version: 1.0.0
+
+  - name: pg_hint_plan
+    version: 1.5.2
+
+  - name: pgaudit
+    version: 1.7.0
+
+  - name: credcheck
+    version: 2.8.0
+
+  - name: system_stats
+    version: 3.2
 ```
 
 
 ### 패키지 생성 실행
 
-`input.yaml` 설정 후, 터미널을 통해 아래 파이썬 명령 수행으로 OpenSQL 패키지를 생성합니다
-
+#### 기본 패키징 설정파일 `input.yaml` 바탕으로 OpenSQL 패키지 생성 실행
 ```
 python3 package.py
+```
+
+#### 특정 패키징 설정파일 지정 후 OpenSQL 패키지 생성 실행
+```sh
+python3 package.py --setting {yaml 설정파일 이름}
+
+# ex) opensql v2.0 템플릿 설정파일 기반으로 패키지 생성 실행
+# python3 package.py --setting opensql-2.0.yaml
+
+# ex) opensql v2.1 템플릿 설정파일 기반으로 패키지 생성 실행
+# python3 package.py --setting opensql-2.1.yaml
 ```
 
 (패키지 생성은 하드웨어 성능에 따라 다르나 대략 5분 정도 소요)  
@@ -136,12 +234,14 @@ python3 package.py
   * `pgpool` rpm 디렉토리
   * `postgis` rpm 디렉토리
   * `barman` rpm 디렉토리
-  * `extension-utils-make` `make` rpm 디렉토리 (pg extension 설치 유틸)
-  * `extension-utils-llvm` `llvm` rpm 디렉토리 (pg extension 설치 유틸)
+  * `extension-utils` rpm 디렉토리 (pg extension 설치 유틸)
   * `pg_hint_plan` rpm 디렉토리 (pg extension)
   * `pgaudit` make install 디렉토리 (pg extension)
   * `system_stats` make install 디렉토리 (pg extension)
   * `credcheck` make install 디렉토리 (pg extension)
+  * `etcd` 바이너리 디렉토리
+  * `patroni` pip3 install 디렉토리 (python binary)
+  * `patroni-dependencies` rpm 디렉토리 (patroni 실행 및 설치 유틸)
 
 `METADATA`
 
@@ -186,13 +286,16 @@ system_stats 3.2
 
 * OpenSQL 패키지 내부 모든 rpm 파일 컴포넌트들 설치
 
-  `rpm -Uvh --nodeps --replacepkgs --replacefiles ./**/*.rpm`
+  ```sh
+  rpm -Uvh --nodeps --replacepkgs --replacefiles ./**/*.rpm
+  rpm -Uvh --nodeps --replacepkgs --replacefiles ./**/**/*.rpm
+  ```
 
 * 컴포넌트 개별 선택 설치
 
   `rpm -Uvh --nodeps --replacepkgs --replacefiles ./{컴포넌트 디렉토리 이름}/*.rpm`
 
-  ex) 컴포넌트 중 postgresql만 설치할때,
+  ex) 컴포넌트 중 postgresql만 설치
 
   `rpm -Uvh --nodeps --replacepkgs --replacefiles ./postgresql/*.rpm`
 
@@ -235,6 +338,22 @@ system_stats 3.2
 - `make install`은 사전에 `make`, `llvm` 유틸이 설치되어 있어야 수행 가능합니다.   
   (`extension-utils-make`, `extension-utils-llvm` 디렉토리는 해당 유틸들의 rpm 파일을 제공하므로, 필요시 설치 하시면 됩니다)
 
+#### etcd 설치
+
+etcd 디렉토리 내부 바이너리 파일들(`etcd`, `etcdctl`, `etcdutl`)을 서버 환경의 **PATH 환경변수($PATH)** 에 등록된 경로로 이동 또는 복사
+
+#### patroni 설치
+```bash
+  # 1. python3 및 유틸 설치(opensql 디렉토리 기준)  
+  # 전체 설치
+  rpm -Uvh --nodeps --replacefiles --replacepkgs ./patroni-dependencies/**/*.rpm
+
+  # 특정 유틸 설치
+  rpm -Uvh --nodeps --replacefiles --replacepkgs ./patroni-dependencies/{유틸}/*.rpm
+
+  # 2. patroni 설치 (opensql/patroni 디렉토리 기준)
+  pip3 install *
+```
 
 ## 기타
 
