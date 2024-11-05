@@ -374,6 +374,22 @@ def make_component_directory(component_name, docker_container, docker_container_
 
     return download_directory
 
+def download_rpms(artifact, directory, docker_container, docker_container_log):
+
+    print(f'[INFO] {artifact} download...')
+
+    download_directory = make_component_directory(directory, docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] {artifact} download is failed.\n{result.output.decode()}')
+        return False
+
+    return True
+
 def get_postgresql(os_major_version, pg_version, docker_container, docker_container_log):
 
     pg_major_version = pg_version.split('.')[0]
@@ -394,17 +410,12 @@ def get_postgresql(os_major_version, pg_version, docker_container, docker_contai
 
     print(f'[INFO] pg download...')
 
-    download_directory = make_component_directory('postgresql', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
     for artifact_format in component_artifacts['postgresql']:
         artifact = artifact_format.format(version=pg_version, major_version=pg_major_version)
-        result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
 
-        if result.exit_code != 0:
-            print(f'[ERROR] repotrack pg download is failed.\n{result.output.decode()}')
-            return False
+        success = download_rpms(artifact, 'postgresql', docker_container, docker_container_log)
+
+        if not success: return False
 
     return True
 
@@ -436,20 +447,8 @@ def get_pgpool(os_major_version, pg_major_version, component, docker_container, 
         print(f'[ERROR] pgpool download setting is failed.')
         return False
 
-    print(f'[INFO] pgpool download...')
-
-    download_directory = make_component_directory('pgpool', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
     artifact = component_artifacts['pgpool'].format(**format_arguments)
-    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
-
-    if result.exit_code != 0:
-        print(f'[ERROR] pgpool download is failed.\n{result.output.decode()}')
-        return False
-
-    return True
+    return download_rpms(artifact, 'pgpool', docker_container, docker_container_log)
 
 def get_postgis(pg_major_version, component, docker_container, docker_container_log):
 
@@ -481,24 +480,11 @@ def get_postgis(pg_major_version, component, docker_container, docker_container_
 
 def get_barman(component, docker_container, docker_container_log):
 
-    print(f'[INFO] barman download...')
-
-    download_directory = make_component_directory('barman', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
     artifact = component_artifacts['barman'].format(version=component[version])
-    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
 
-    if result.exit_code != 0:
-        print(f'[ERROR] barman download is failed.')
-        return False
-
-    return True
+    return download_rpms(artifact, 'barman', docker_container, docker_container_log)
 
 def get_pg_hint_plan(os_major_version, pg_major_version, component, docker_container, docker_container_log):
-
-    print(f'[INFO] pg_hint_plan download...')
 
     component_version_tokens = component[version].split('.')
 
@@ -511,62 +497,19 @@ def get_pg_hint_plan(os_major_version, pg_major_version, component, docker_conta
         'pg_major_version': pg_major_version
     }
 
-    download_directory = make_component_directory('pg_hint_plan', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
     artifact = component_repositories['pg_hint_plan'].format(**format_arguments)
-    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
 
-    if result.exit_code != 0:
-        print(f'[ERROR] pg_hint_plan download is failed.')
-        return False
-
-    return True
-
-def get_make(docker_container, docker_container_log):
-
-    print(f'[INFO] extension util(make) download...')
-
-    download_directory = make_component_directory('extension-utils-make', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
-    artifact = 'make'
-    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
-
-    if result.exit_code != 0:
-        print(f'[ERROR] make download is failed.')
-        return False
-
-    return True
-
-def get_llvm(docker_container, docker_container_log):
-
-    print(f'[INFO] extension util(llvm) download...')
-
-    download_directory = make_component_directory('extension-utils-llvm', docker_container, docker_container_log)
-
-    if download_directory is None: return False
-
-    artifact = 'llvm'
-    result = execute_and_log_container(f'repotrack --destdir {download_directory} {artifact}', docker_container, docker_container_log)
-
-    if result.exit_code != 0:
-        print(f'[ERROR] make download is failed.')
-        return False
-
-    return True
+    return download_rpms(artifact, 'pg_hint_plan', docker_container, docker_container_log)
 
 def get_pg_build_extension_install_utils(docker_container, docker_container_log):
 
     print(f'[INFO] pg build extension install utils download...')
 
-    success = get_make(docker_container, docker_container_log)
+    success = download_rpms('make', 'extension-utils/make', docker_container, docker_container_log)
 
     if not success: return False
 
-    success = get_llvm(docker_container, docker_container_log)
+    success = download_rpms('llvm', 'extension-utils/llvm', docker_container, docker_container_log)
 
     if not success: return False
 
