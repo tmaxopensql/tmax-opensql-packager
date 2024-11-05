@@ -84,12 +84,15 @@ support_versions = {
         '8.4','8.5','8.6','8.7','8.8','8.9','8.10',
         '9.0','9.1','9.2','9.3','9.4'
     },
-    'postgresql': { '15.8' },
+    'postgresql': { '14.13', '15.8' },
     'pgpool': { '4.4.4' },
     'postgis': { '3.4.0' },
     'barman': { '3.11.1' },
     'pg_build_extension_install_utils': { '1.0.0' },
-    'pg_hint_plan': { '1.5.2' },
+    'pg_hint_plan': {
+        '14': { '1.4.3' },
+        '15': { '1.5.2' }
+    },
     'pgaudit': { '1.7.0' },
     'credcheck': { '2.8.0' },
     'system_stats': { '3.2' },
@@ -135,8 +138,21 @@ def __main__():
     if spec[database][version] not in support_versions[spec[database][name]]:
         print(f'[ERROR] database version {spec[database][version]} is not supported. (available versions: {support_versions[spec[database][name]]})')
         return
-    
+
+    db_version = spec[database][version]
+    db_major_version = db_version.split('.')[0]
+
+    # Check components vailidity
     for component in spec[options]:
+
+        if component[name] not in support_versions: continue
+
+        if db_major_version in support_versions[component[name]]:
+            if component[version] not in support_versions[component[name]][db_major_version]:
+                print(f'[ERROR] there is no supported version {component[version]} of {component[name]} for db major version {db_major_version}. (available versions: {support_versions[component[name]]})')
+                return
+            continue
+
         if component[version] not in support_versions[component[name]]:
             print(f'[ERROR] {component[name]} version {component[version]} is not supported. (available versions: {support_versions[component[name]]})')
             return
@@ -188,10 +204,7 @@ def __main__():
 
             print(f'[INFO] pg download setting...')
 
-            pg_version = spec[database][version]
-            pg_major_version = pg_version.split('.')[0]
-
-            success = get_postgresql(os_major_version, pg_version, docker_container, docker_container_log)
+            success = get_postgresql(os_major_version, db_version, docker_container, docker_container_log)
 
             if not success: return
 
@@ -199,16 +212,16 @@ def __main__():
         for component in spec[options]:
 
             if 'pgpool' == component[name]:
-                success = get_pgpool(os_major_version, pg_major_version, component, docker_container, docker_container_log)
+                success = get_pgpool(os_major_version, db_major_version, component, docker_container, docker_container_log)
 
             if 'postgis' == component[name]:
-                success = get_postgis(pg_major_version, component, docker_container, docker_container_log)
+                success = get_postgis(db_major_version, component, docker_container, docker_container_log)
 
             if 'barman' == component[name]:
                 success = get_barman(component, docker_container, docker_container_log)
 
             if 'pg_hint_plan' == component[name]:
-                success = get_pg_hint_plan(os_major_version, pg_major_version, component, docker_container, docker_container_log)
+                success = get_pg_hint_plan(os_major_version, db_major_version, component, docker_container, docker_container_log)
 
             if 'pg_build_extension_install_utils' == component[name]:
                 success = get_pg_build_extension_install_utils(docker_container, docker_container_log)

@@ -9,7 +9,7 @@ os:
 database:
   name: postgresql
   version: 15.8
-# available version: [ 15.8 ]
+# available version: [ 14.13, 15.8 ]
 
 options:
   - name: pgpool
@@ -30,7 +30,10 @@ options:
 
   - name: pg_hint_plan
     version: 1.5.2
-    # available version: [ 1.5.2 ]
+    # available version: {
+    #   PG14: [ 1.4.3 ]
+    #   PG15: [ 1.5.2 ]
+    # }
 
   - name: pgaudit
     version: 1.7.0
