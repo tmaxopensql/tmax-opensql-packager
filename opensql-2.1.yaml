@@ -1,0 +1,29 @@
+os:
+  name: oraclelinux
+  version: 8.10
+
+database:
+  name: postgresql
+  version: 15.8
+
+options:
+  - name: etcd
+    version: 3.5.6
+
+  - name: patroni
+    version: 4.0.3
+
+  - name: pg_build_extension_install_utils
+    version: 1.0.0
+
+  - name: pg_hint_plan
+    version: 1.5.2
+
+  - name: pgaudit
+    version: 1.7.0
+
+  - name: credcheck
+    version: 2.8.0
+
+  - name: system_stats
+    version: 3.2
