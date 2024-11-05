@@ -43,7 +43,8 @@ component_artifacts = {
     'postgresql': {
         'postgresql{major_version}-{version}',
         'postgresql{major_version}-server-{version}',
-        'postgresql{major_version}-contrib-{version}'
+        'postgresql{major_version}-contrib-{version}',
+        'postgresql{major_version}-devel-{version}'
     },
     'pgpool': 'pgpool-II-pg{pg_major_version}-{version}',
     'postgis': 'postgis3{number}_{pg_major_version}-{version}', # epel needed
