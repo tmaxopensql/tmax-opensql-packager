@@ -133,35 +133,48 @@ OpenSQL v2.0 패키징을 위한 `input.yaml` 템플릿
 os:
   name: oraclelinux
   version: 8.10
+# available os: {
+#   oraclelinux: [ 8.0 ~ 8.10, 9 ]
+#   rockylinux: [ 8.4 ~ 8.10, 9.0 ~ 9.4 ]
+# }
 
 database:
   name: postgresql
   version: 15.8
+# available version: [ 15.8 ]
 
 options:
   - name: pgpool
     version: 4.4.4
+    # available version: [ 4.4.4 ]
 
   - name: postgis
     version: 3.4.0
+    # available version: [ 3.4.0 ]
 
   - name: barman
     version: 3.11.1
+    # available version: [ 3.11.1 ]
 
   - name: pg_build_extension_install_utils
     version: 1.0.0
+    # available version: [ 1.0.0 ]
 
   - name: pg_hint_plan
     version: 1.5.2
+    # available version: [ 1.5.2 ]
 
   - name: pgaudit
     version: 1.7.0
+    # available version: [ 1.7.0 ]
 
   - name: credcheck
     version: 2.8.0
+    # available version: [ 2.8.0 ]
 
   - name: system_stats
     version: 3.2
+    # available version: [ 3.2 ]
 ```
 
 #### opensql-2.1.yaml
@@ -171,32 +184,44 @@ OpenSQL v2.1 패키징을 위한 `input.yaml` 템플릿
 os:
   name: oraclelinux
   version: 8.10
+# available os: {
+#   oraclelinux: [ 8.0 ~ 8.10, 9 ]
+#   rockylinux: [ 8.4 ~ 8.10, 9.0 ~ 9.4 ]
+# }
 
 database:
   name: postgresql
   version: 15.8
+# available version: [ 15.8 ]
 
 options:
   - name: etcd
     version: 3.5.6
+    # available version: [ 3.5.6 ]
 
   - name: patroni
     version: 4.0.3
+    # available version: [ 4.0.3 ]
 
   - name: pg_build_extension_install_utils
     version: 1.0.0
+    # available version: [ 1.0.0 ]
 
   - name: pg_hint_plan
     version: 1.5.2
+    # available version: [ 1.5.2 ]
 
   - name: pgaudit
     version: 1.7.0
+    # available version: [ 1.7.0 ]
 
   - name: credcheck
     version: 2.8.0
+    # available version: [ 2.8.0 ]
 
   - name: system_stats
     version: 3.2
+    # available version: [ 3.2 ]
 ```
 
 
