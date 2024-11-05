@@ -35,7 +35,8 @@ component_repositories = {
     'postgresql': 'https://download.postgresql.org/pub/repos/yum/reporpms/EL-{os_major_version}-x86_64/pgdg-redhat-repo-latest.noarch.rpm',
     'pgpool': 'https://www.pgpool.net/yum/rpms/{major_version}.{minor_version}/redhat/rhel-{os_major_version}-x86_64/pgpool-II-release-{major_version}.{minor_version}-{number}.noarch.rpm',
     'pg_hint_plan': 'https://github.com/ossc-db/pg_hint_plan/releases/download/REL{pg_major_version}_{major_version}_{minor_version}_{patch_version}/pg_hint_plan{pg_major_version}-{version}-1.pg{pg_major_version}.rhel{os_major_version}.x86_64.rpm',
-    'pg_build_extensions': 'https://raw.githubusercontent.com/tmaxopensql/tmax-opensql-extensions/refs/heads/main/{name}/{version}/{name}-{version}-{os_name}{os_version}-pg{pg_major_version}.tar'
+    'pg_build_extensions': 'https://raw.githubusercontent.com/tmaxopensql/tmax-opensql-extensions/refs/heads/main/{name}/{version}/{name}-{version}-{os_name}{os_version}-pg{pg_major_version}.tar',
+    'etcd': 'https://github.com/etcd-io/etcd/releases/download/v{version}/etcd-v{version}-linux-amd64.tar.gz'
 }
 
 # opensql component artifact names
@@ -91,7 +92,8 @@ support_versions = {
     'pg_hint_plan': { '1.5.2' },
     'pgaudit': { '1.7.0' },
     'credcheck': { '2.8.0' },
-    'system_stats': { '3.2' }
+    'system_stats': { '3.2' },
+    'etcd': { '3.5.6' }
 }
 
 # docker container directories
@@ -212,6 +214,9 @@ def __main__():
 
             if component[name] in component_groups['pg_build_extensions']:
                 success = get_pg_build_extension(spec, component, docker_container, docker_container_log)
+
+            if 'etcd' == component[name]:
+                success = get_etcd(component, docker_container, docker_container_log)
 
             if not success: return
             else: continue
@@ -616,6 +621,44 @@ def get_pg_build_extension(spec, component, docker_container, docker_container_l
     # if is not available with os major version, then we give up. no choice.
     if not available:
         print(f'[ERROR] there is no availabe pg build extension file {component} for {spec[os]} {spec[database]}')
+        return False
+
+    path = download_directory + '/tmp.tar'
+
+    success = curl_download_file(url, path, docker_container, docker_container_log)
+
+    if not success: return False
+
+    result = execute_and_log_container('tar -xvf tmp.tar', docker_container, docker_container_log, download_directory)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] tar -xvf is failed.\n{result.output.decode()}')
+        return False
+
+    result = execute_and_log_container('rm tmp.tar', docker_container, docker_container_log, download_directory)
+
+    if result.exit_code != 0:
+        print(f'[ERROR] rm tmp.tar is failed.\n{result.output.decode()}')
+        return False
+
+    return True
+
+def get_etcd(component, docker_container, docker_container_log):
+
+    print(f'[INFO] etcd download...')
+
+    download_directory = make_component_directory(component[name], docker_container, docker_container_log)
+
+    if download_directory is None: return False
+
+    # parse download url of etcd
+    url = component_repositories['etcd'].format(version=component[version])
+
+    available = curl_check_file_available(url, docker_container, docker_container_log)
+
+    # if is not available, then we give up. no choice.
+    if not available:
+        print(f'[ERROR] there is no availabe pg build extension file {component}')
         return False
 
     path = download_directory + '/tmp.tar'
